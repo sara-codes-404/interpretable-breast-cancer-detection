@@ -37,3 +37,10 @@ The model is trained using `BCEWithLogitsLoss`, which is suitable for our binary
 ## Explainability with Grad-CAM
 
 ## Project Structure
+The repository currently contains the main project documentation files:
+
+- `README.md`: Provides an overview of the project, its methodology, training strategy, and other important information.
+- `PROJECT_SUMMARY.md`: Contains a more detailed summary of the project and its main components.
+
+  ## Installation
+  To run this project locally, Python and the required libraries need to be installed first. The exact dependencies will be listed in the `requirements.txt` file.
