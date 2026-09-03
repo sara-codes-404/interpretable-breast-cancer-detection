@@ -21,8 +21,9 @@ We use ResNet-18 as the main architecture in this project. Transfer Learning is 
 The model is trained using `BCEWithLogitsLoss`, which is suitable for our binary classification task with a single output logit. The Adam optimizer is used to update the trainable parameters of the model. After each training epoch, the model is evaluated on the validation set to monitor its performance on unseen samples. We use `ReduceLROnPlateau` to reduce the learning rate when the validation loss stops improving. The best model checkpoint is saved based on the validation loss.
 
 ### Training Configuration
-| Parameter | Value |
 
+| Parameter | Value |
+|---|---|
 | Dataset samples | 5,000 |
 | Training samples | 4,000 |
 | Validation samples | 1,000 |
@@ -44,3 +45,6 @@ The repository currently contains the main project documentation files:
 
   ## Installation
   To run this project locally, Python and the required libraries need to be installed first. The exact dependencies will be listed in the `requirements.txt` file.
+  
+### Environment
+The project was developed using Python 3.12. The main libraries used in the project include PyTorch, Torchvision, Hugging Face Datasets, and Matplotlib.
