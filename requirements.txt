@@ -1,0 +1,6 @@
+torch==2.13.0
+torchvision==0.28.0
+numpy==2.2.6
+matplotlib==3.10.7
+h5py
+datasets
