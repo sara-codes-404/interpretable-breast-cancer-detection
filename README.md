@@ -45,6 +45,13 @@ The repository currently contains the main project documentation files:
 
   ## Installation
   To run this project locally, Python and the required libraries need to be installed first. The exact dependencies will be listed in the `requirements.txt` file.
+
+  ### Running the Project
+
+After installing the required dependencies, the training script can be run with:
+
+```bash
+python train.py
   
 ### Environment
 The project was developed using Python 3.12. The main libraries used in the project include PyTorch, Torchvision, Hugging Face Datasets, and Matplotlib.
