@@ -35,6 +35,21 @@ The model is trained using `BCEWithLogitsLoss`, which is suitable for our binary
 
 ## Results
 
+The model achieved a best validation accuracy of 90.4% during training. The lowest validation loss was 0.2212, achieved at epoch 18.
+
+The training and validation curves show that both loss and accuracy improved during training. After epoch 18, the validation loss started to increase slightly, while the validation accuracy remained around 90%. The best checkpoint was therefore saved based on the lowest validation loss.
+
+### Training Results
+
+| Metric | Value |
+|---|---:|
+| Best Validation Accuracy | 90.4% |
+| Best Validation Loss | 0.2212 |
+| Best Epoch | 18 |
+| Final Training Accuracy | 90.9% |
+| Final Validation Accuracy | 90.4% |
+![Training Curves](chart_1.png)
+
 ## Explainability with Grad-CAM
 
 ## Project Structure
