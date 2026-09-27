@@ -82,7 +82,7 @@ best checkpoint was therefore saved based on the lowest validation loss.
 | Final Training Accuracy | 90.9% |
 | Final Validation Accuracy | 90.4% |
 
-![Training curves](results/figures/training_curves_partial.png)
+![Training Curves](chart_1.png)
 
 ## Test Set Evaluation
 
@@ -118,7 +118,8 @@ The resulting heatmaps consistently highlight regions of high nuclear
 density — consistent with real histopathological markers of malignancy
 that pathologists look for.
 
-![Grad-CAM examples](results/figures/gradcam_examples.png)
+![Grad-CAM Examples](gradcam_exampled.png)
+
 
 ## Limitations
 
