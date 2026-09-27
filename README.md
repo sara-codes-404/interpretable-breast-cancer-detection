@@ -118,7 +118,7 @@ The resulting heatmaps consistently highlight regions of high nuclear
 density — consistent with real histopathological markers of malignancy
 that pathologists look for.
 
-![Grad-CAM Examples](gradcam_exampled.png)
+![Grad-CAM Examples](gradcam_examples.png)
 
 
 ## Limitations
