@@ -2,52 +2,45 @@
 
 ## Overview
 
-This project focuses on classifying histopathological images for tumor
-detection. The project uses the PCam (PatchCamelyon) dataset. A ResNet-18
-model with Transfer Learning is used for binary classification, while
-Grad-CAM is used to improve model interpretability.
+This project is about classifying histopathology images as tumor or
+healthy tissue, using the PCam (PatchCamelyon) dataset. I trained a
+ResNet-18 with transfer learning for the classification part, and used
+Grad-CAM on top of it so the model's decisions aren't just a black box.
 
-This is the first of two related projects exploring breast cancer detection
-from complementary data modalities — see [Future Work](#future-work) for how
-this connects to a second project on gene-expression-based subtype
-prediction.
+This is the first of two projects I'm working on around breast cancer —
+the second one looks at gene expression data instead of images. See
+[Future Work](#future-work) for how I'm hoping to connect the two later.
 
 ## Problem Statement
 
-The model is designed to classify histopathological images as either tumor
-or healthy tissue. In medical applications, a prediction alone may not be
-sufficient; it is important to understand the basis of the model's
-decision. Grad-CAM helps identify the regions of an image that contribute
-to the model's prediction, improving the transparency of the model's
-decisions.
+Just classifying an image as "tumor" or "healthy" isn't really enough on
+its own, especially for something medical. If a model is going to be
+useful, you also need some way to check *why* it made that call. That's
+what Grad-CAM is for here — it shows which parts of the image the model
+was actually looking at when it made a prediction.
 
 ## Data Preparation
 
-We used 5,000 samples from the PCam dataset, with 4,000 samples for
-training and 1,000 samples for validation. Different transformations were
-applied to the training and validation sets. Data augmentation was applied
-only to the training set to increase data diversity and help the model
-generalize better to unseen images.
+I used 5,000 samples from PCam — 4,000 for training, 1,000 for
+validation. The training set gets augmented (flips and rotation), the
+validation set doesn't, since we want validation to reflect what the
+model would actually see on new images.
 
 ## Model Architecture
 
-We use ResNet-18 as the main architecture in this project. Transfer
-Learning is applied using pretrained weights from ImageNet, allowing the
-model to leverage features learned from a large-scale dataset. The
-original final fully connected (FC) layer, which was designed for 1,000
-ImageNet classes, is replaced with a new FC layer for our binary
-classification task. The modified model produces a single output logit
-for distinguishing between tumor and healthy tissue.
+ResNet-18, pretrained on ImageNet. I swapped out the original 1000-class
+FC layer for a single output neuron, since this is just a binary
+tumor/healthy decision. Most of the pretrained weights get reused —
+that's the whole point of transfer learning here, we don't have anywhere
+near enough data to train a ResNet from scratch.
 
 ## Training Strategy
 
-The model is trained using `BCEWithLogitsLoss`, which is suitable for our
-binary classification task with a single output logit. The Adam optimizer
-is used to update the trainable parameters of the model. After each
-training epoch, the model is evaluated on the validation set to monitor
-its performance on unseen samples. We use `ReduceLROnPlateau` to reduce
-the learning rate when the validation loss stops improving. The best
-model checkpoint is saved based on the validation loss.
+Loss is `BCEWithLogitsLoss` (fits a single-logit binary setup), optimizer
+is Adam. After every epoch I check performance on the validation set, and
+`ReduceLROnPlateau` drops the learning rate if validation loss stops
+improving. Whatever checkpoint has the lowest validation loss gets saved
+as the "best" one.
 
 ### Training Configuration
 
@@ -64,13 +57,13 @@ model checkpoint is saved based on the validation loss.
 
 ## Results
 
-The model achieved a best validation accuracy of 90.4% during training.
-The lowest validation loss was 0.2212, achieved at epoch 18.
+Best validation accuracy was 90.4%, with the lowest validation loss
+(0.2212) showing up at epoch 18.
 
-The training and validation curves show that both loss and accuracy
-improved during training. After epoch 18, the validation loss started to
-increase slightly, while the validation accuracy remained around 90%. The
-best checkpoint was therefore saved based on the lowest validation loss.
+Looking at the curves, both loss and accuracy kept improving through
+training. After epoch 18 validation loss ticked up a bit while accuracy
+stayed around 90%, so I kept the epoch-18 checkpoint as the final model
+instead of the very last epoch.
 
 ### Training Results
 
@@ -82,15 +75,14 @@ best checkpoint was therefore saved based on the lowest validation loss.
 | Final Training Accuracy | 90.9% |
 | Final Validation Accuracy | 90.4% |
 
-![Training Curves](chart_1.png)
+![Training curves](chart_1.png)
 
 ## Test Set Evaluation
 
-Validation accuracy alone can be misleading, since it is also used to
-select the best checkpoint during training. To get an unbiased estimate
-of generalization, we additionally evaluated the final model on the
-**official, held-out PCam test split** — a set of slides the model never
-saw during training or checkpoint selection.
+Validation accuracy on its own is a bit misleading here, since it's also
+what I used to pick the best checkpoint. To get a fairer number, I ran
+the final model on PCam's official test split — data the model never saw
+during training or checkpoint selection at all.
 
 | Metric | Validation | Official Test Set |
 |---|---|---|
@@ -100,100 +92,95 @@ saw during training or checkpoint selection.
 | F1-score | — | ~0.81–0.82 |
 | ROC-AUC | — | ~0.92–0.93 |
 
-This gap between validation and test performance is real and is discussed
-in detail in [Limitations](#limitations) below, since understanding *why*
-it exists turned out to be one of the more instructive parts of this
-project.
+So there's a real gap between validation and test accuracy. I dig into
+why in [Limitations](#limitations) below — figuring that out was
+honestly one of the more useful parts of doing this project.
 
 ## Explainability with Grad-CAM
 
-Grad-CAM was used to visualize which regions of each image most
-influenced the model's prediction. Heatmaps were computed on the
-`layer3` activations of ResNet-18 rather than the more commonly used
-`layer4` — with 96×96 inputs, `layer4`'s activation map shrinks to just
-3×3, too coarse to localize meaningfully. `layer3`'s 6×6 map gives a much
-better resolution/semantic trade-off for small image patches like these.
+I generated the Grad-CAM heatmaps from `layer3` instead of the usual
+`layer4`. Reason: PCam images are only 96×96 pixels, so by the time you
+get to `layer4` the activation map has shrunk down to 3×3 — way too
+small to show anything useful once you upscale it back to image size.
+`layer3` gives a 6×6 map instead, which is still coarse but at least
+shows *something*.
 
-The resulting heatmaps consistently highlight regions of high nuclear
-density — consistent with real histopathological markers of malignancy
-that pathologists look for.
+The heatmaps mostly light up on areas with dense clusters of nuclei,
+which lines up with what pathologists actually look for when checking
+for malignancy — so at least the model isn't picking up on something
+random.
 
-![Grad-CAM Examples](gradcam_examples.png)
-
+![Grad-CAM examples](gradcam_examples.png)
 
 ## Limitations
 
-- **Limited training data:** only 5,000 of the 262,144 images available
-  in the full PCam training set were used, due to restricted dataset
-  access (see [Environment & Access Constraints](#environment--access-constraints)).
-- **Validation/test generalization gap:** validation accuracy (~90%) was
-  consistently higher than official test accuracy (~82–84%). Investigation
-  traced part of this gap to a data sampling issue — taking the first
-  5,000 samples in dataset order captured limited slide-level diversity,
-  since PCam images are ordered by source whole-slide image. Switching to
-  samples spread across the full training range partially narrowed the
-  gap but did not close it entirely. This is consistent with published
-  results showing PCam accuracy scaling directly with the number of
-  distinct training slides used, not just the number of patches — with the
-  full dataset, this gap would be expected to shrink substantially.
-- **Recall/precision trade-off:** the model currently misses more true
-  tumor cases (recall ~0.74) than it produces false alarms (precision
-  ~0.90–0.92). In a real screening context, this trade-off would need to
-  be revisited, since false negatives are typically the costlier error.
+- **Not much training data.** Only 5,000 of the 262,144 images in the
+  full PCam training set got used — see
+  [Environment & Access Constraints](#environment--access-constraints)
+  for why.
+- **Gap between validation and test accuracy.** Validation sat around
+  90%, test came in closer to 82-84%. Part of this turned out to be a
+  data sampling issue — grabbing the first 5,000 samples in the dataset's
+  stored order meant pulling from a limited number of slides, since PCam
+  images are ordered by source slide. Sampling spread out across the full
+  training range helped close the gap a bit, but not all the way. This
+  matches what's reported elsewhere too — PCam accuracy tends to scale
+  with how many distinct slides you train on, not just how many patches.
+  With the full dataset this gap would probably shrink a lot more.
+- **Recall is lower than I'd like.** The model misses more actual tumors
+  (recall ~0.74) than it falsely flags healthy tissue as tumor (precision
+  ~0.90-0.92). For anything resembling real screening use, that's the
+  wrong direction to be off in, since missing a real tumor is worse than
+  a false alarm.
 
 ## Environment & Access Constraints
 
-This project was developed under real infrastructure constraints worth
-documenting: Google Colab and Kaggle are both restricted in the
-developer's region, requiring VPN access for GPU-backed training. The
-original PCam HDF5 files (hosted on Google Drive) were also inaccessible
-due to download quota limits, so the Hugging Face Hub mirror
-(`1aurent/PatchCamelyon`) was used instead, loading a constrained subset
-of the full dataset rather than all 262,144 training images.
+Worth mentioning since it shaped a lot of decisions here: both Google
+Colab and Kaggle are blocked in my region, so I needed a VPN just to get
+GPU access for training. The original PCam HDF5 files (hosted on Google
+Drive) were also unreachable because of download quota limits, so I
+ended up pulling the data from a Hugging Face Hub mirror
+(`1aurent/PatchCamelyon`) instead — and only a subset of it, not the full
+262,144 images.
 
-The project was developed using Python 3.12. The main libraries used
-include PyTorch, Torchvision, Hugging Face `datasets`, scikit-learn, and
-Matplotlib.
+Built with Python 3.12. Main libraries: PyTorch, Torchvision, Hugging
+Face `datasets`, scikit-learn, and Matplotlib.
 
 ## Future Work
 
-- Train on the full PCam dataset to close the validation/test gap
-  described above.
-- Apply stain normalization (e.g., the Macenko method) to reduce
-  slide-to-slide color variation — a likely contributor to the
-  generalization gap.
-- Quantitative Grad-CAM evaluation (e.g., deletion/insertion metrics)
-  rather than qualitative visual inspection alone.
-- **Multimodal integration** with a companion project, *Graph Neural
-  Network for Breast Cancer Subtype Prediction from Gene Expression
-  Data*: comparing Grad-CAM attention regions against PAM50 molecular
-  subtypes, and eventually building a fusion model combining image-level
-  and gene-expression features. Together, these two projects are intended
-  as early steps toward interpretable, multimodal breast cancer diagnosis.
+- Train on the full PCam dataset — should help close the validation/test
+  gap above.
+- Try stain normalization (Macenko method) to cut down on slide-to-slide
+  color differences, which is probably part of what's driving that gap.
+- Evaluate Grad-CAM more rigorously — right now it's just visual
+  inspection, a metric like deletion/insertion would be more convincing.
+- Connect this to my other project — a GNN predicting breast cancer
+  subtypes from gene expression data. The idea is to check whether the
+  regions Grad-CAM highlights line up with known PAM50 molecular
+  subtypes, and eventually combine image features with gene expression
+  features in one model. Two separate projects right now, but the plan
+  is for them to feed into the same bigger question.
 
 ## Project Structure
 
 ```
-Interpretable-Breast-Cancer-Detection/
-├── src/
-│   ├── dataset.py     # PCam dataset loading (HF Hub + diverse sampling)
-│   ├── model.py         # ResNet-18 with configurable layer freezing
-│   ├── train.py          # Training loop, LR scheduling, checkpointing
-│   ├── evaluate.py       # Held-out test set evaluation
-│   └── gradcam.py        # Grad-CAM implementation and visualization
-├── results/
-│   ├── checkpoints/      # Saved model weights (not tracked in git)
-│   ├── figures/           # Training curves, Grad-CAM examples
-│   └── training_history_*.json
+interpretable-breast-cancer-detection/
+├── dataset.py           # PCam dataset loading (HF Hub + diverse sampling)
+├── model.py              # ResNet-18 with configurable layer freezing
+├── train.py               # Training loop, LR scheduling, checkpointing
+├── evaluate.py            # Held-out test set evaluation
+├── grad_cam.py            # Grad-CAM implementation and visualization
+├── chart_1.png            # Training/validation loss & accuracy curves
+├── gradcam_examples.png   # Grad-CAM visualization examples
 ├── requirements.txt
 ├── README.md
 └── PROJECT_SUMMARY.md
 ```
 
-## Installation
+Model checkpoints (`.pth` files) get generated locally when you run
+`train.py` — they're not tracked in this repo since they're too big.
 
-To run this project locally, Python and the required libraries need to be
-installed first. All dependencies are listed in `requirements.txt`:
+## Installation
 
 ```bash
 pip install -r requirements.txt
@@ -203,22 +190,22 @@ pip install -r requirements.txt
 
 ```bash
 # Train the model
-python src/train.py
+python train.py
 
 # Evaluate on the official held-out test set
-python src/evaluate.py
+python evaluate.py
 
 # Generate Grad-CAM visualizations
-python src/gradcam.py
+python grad_cam.py
 ```
 
-**Note:** training was run on Google Colab (free GPU tier); the code is
-device-agnostic and runs on CPU as well, though considerably slower.
+**Note:** I trained this on Google Colab's free GPU tier. The code isn't
+GPU-only though — it'll run on CPU too, just a lot slower.
 
 ## Data
 
 - **Dataset:** [PatchCamelyon (PCam)](https://github.com/basveeling/pcam) —
-  96×96 histopathology patches with binary tumor/normal labels.
+  96×96 histopathology patches, binary tumor/normal labels.
 - **Source used:** [`1aurent/PatchCamelyon`](https://huggingface.co/datasets/1aurent/PatchCamelyon)
   on the Hugging Face Hub.
 
