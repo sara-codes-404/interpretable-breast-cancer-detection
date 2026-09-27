@@ -148,18 +148,36 @@ Face `datasets`, scikit-learn, and Matplotlib.
 
 ## Future Work
 
+## Future Work
+
+- **Quantitative check on the Grad-CAM heatmaps.** Right now the claim
+  that Grad-CAM "focuses on dense nuclei regions" is just something I
+  can see by eye — it'd be worth actually measuring it. The plan is to
+  segment cell nuclei with a classic image processing approach (color
+  thresholding + watershed, using scikit-image or OpenCV — no deep
+  learning needed since H&E staining makes nuclei fairly distinct by
+  color), turn that into a binary map of nucleus locations, and then
+  compare it directly against the Grad-CAM heatmap with something like
+  IoU or a spatial correlation score. That'd turn "the heatmaps look
+  reasonable" into an actual number I can report.
+
+- **Looking closer at what the model gets wrong.** The evaluation run
+  turned up 671 false negatives — tumor images the model called healthy.
+  I haven't looked at those individually yet. Worth pulling them out and
+  checking for anything in common (lighting, lower nucleus density,
+  staining that's off), and running Grad-CAM on them specifically to see
+  where the model *was* looking when it got it wrong, not just when it
+  got it right.
+
 - Train on the full PCam dataset — should help close the validation/test
-  gap above.
-- Try stain normalization (Macenko method) to cut down on slide-to-slide
-  color differences, which is probably part of what's driving that gap.
-- Evaluate Grad-CAM more rigorously — right now it's just visual
-  inspection, a metric like deletion/insertion would be more convincing.
+  gap discussed above.
+- Try stain normalization (Macenko method) to reduce slide-to-slide color
+  differences, which is likely part of what's driving that gap.
 - Connect this to my other project — a GNN predicting breast cancer
   subtypes from gene expression data. The idea is to check whether the
   regions Grad-CAM highlights line up with known PAM50 molecular
   subtypes, and eventually combine image features with gene expression
-  features in one model. Two separate projects right now, but the plan
-  is for them to feed into the same bigger question.
+  features in one model.
 
 ## Project Structure
 
