@@ -146,7 +146,6 @@ ended up pulling the data from a Hugging Face Hub mirror
 Built with Python 3.12. Main libraries: PyTorch, Torchvision, Hugging
 Face `datasets`, scikit-learn, and Matplotlib.
 
-## Future Work
 
 ## Future Work
 
